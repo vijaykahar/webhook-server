@@ -5,48 +5,39 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Create HTTP server explicitly
-const server = http.createServer(app);
-
-// Create socket.io server with CORS config
+const server = http.createServer(app); // ✅ Correct way for socket.io
 const io = new Server(server, {
   cors: {
-    origin: '*', // or specify your frontend domain
+    origin: '*', // replace with frontend URL in production
     methods: ['GET', 'POST'],
   },
 });
 
-// Middleware
+const PORT = process.env.PORT || 5000;
+
 app.use(cors());
 app.use(bodyParser.json());
 
 // Webhook route
 app.post('/webhook', (req, res) => {
   console.log('✅ Webhook received:', req.body);
-
-  // Send data to all connected React clients
-  io.emit('webhook-data', req.body);
-
-  res.status(200).json({ success: true, message: 'Webhook received' });
+  io.emit('webhook-data', req.body); // ✅ emit to all clients
+  res.status(200).json({ status: 'ok' });
 });
 
-// Optional: Health route
+// Basic route
 app.get('/', (req, res) => {
-  res.send('Webhook server running with WebSocket');
+  res.send('🔗 WebSocket server is running!');
 });
 
-// Handle WebSocket connections
 io.on('connection', (socket) => {
-  console.log('🟢 React client connected:', socket.id);
+  console.log('🟢 A client connected:', socket.id);
 
   socket.on('disconnect', () => {
-    console.log('🔴 React client disconnected:', socket.id);
+    console.log('🔴 A client disconnected:', socket.id);
   });
 });
 
-// Start server (not app.listen!)
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
 });
